@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TyrePressure — Road Bike Tyre Pressure</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --card: #18181c;
+    --border: #2a2a30;
+    --accent: #e8ff3a;
+    --text: #f0f0ee;
+    --muted: #6b6b75;
+    --front: #4db8ff;
+    --rear: #ff8c42;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(232,255,58,0.06) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  header {
+    padding: 40px 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .logo-mark {
+    width: 48px; height: 48px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; position: relative;
+  }
+  .logo-mark::before {
+    content: ''; position: absolute;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(232,255,58,0.3); border-radius: 50%;
+  }
+  .logo-mark svg { width: 20px; height: 20px; }
+
+  .header-text h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px; font-weight: 900;
+    letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+  }
+  .header-text h1 span { color: var(--accent); }
+  .header-text p { font-size: 13px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+  .ai-badge {
+    margin-left: auto;
+    background: rgba(232,255,58,0.08);
+    border: 1px solid rgba(232,255,58,0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ai-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 8px; }
+
+  label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+  label .req { color: var(--accent); margin-left: 2px; }
+
+  select, input[type="number"], input[type="text"] {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px; padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none; -webkit-appearance: none;
+    cursor: pointer; width: 100%;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b75' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+  }
+  select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,255,58,0.1); }
+  select option { background: #1a1a1e; }
+
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); margin: 28px 0 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 8px 14px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px; user-select: none;
+  }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.active { background: rgba(232,255,58,0.08); border-color: var(--accent); color: var(--accent); }
+
+  .unit-toggle {
+    display: flex; background: var(--card);
+    border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden; width: fit-content;
+  }
+  .unit-btn {
+    padding: 7px 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; border: none; background: transparent; color: var(--muted); transition: all 0.15s;
+  }
+  .unit-btn.active { background: var(--accent); color: #0a0a0b; }
+
+  .btn-calculate {
+    width: 100%;
+    background: var(--accent); border: none; border-radius: 6px;
+    color: #0a0a0b;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 16px; cursor: pointer; margin-top: 32px;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .btn-calculate::before {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-100%) skewX(-15deg); transition: transform 0.4s;
+  }
+  .btn-calculate:hover::before { transform: translateX(120%) skewX(-15deg); }
+  .btn-calculate:hover { box-shadow: 0 0 30px rgba(232,255,58,0.25); }
+  .btn-calculate:active { transform: scale(0.99); }
+  .btn-calculate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .loading-state {
+    display: none;
+    margin-top: 48px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+  }
+  .loading-state.visible { display: block; animation: fadeUp 0.3s ease; }
+
+  .loading-wheel {
+    width: 52px; height: 52px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .loading-dots::after {
+    content: ''; animation: dots 1.5s steps(4, end) infinite;
+  }
+  @keyframes dots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
+
+  .results { margin-top: 48px; display: none; animation: fadeUp 0.4s ease; }
+  .results.visible { display: block; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  .results-header {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .results-header .ai-tag {
+    background: rgba(232,255,58,0.1); border: 1px solid rgba(232,255,58,0.2);
+    border-radius: 3px; padding: 2px 7px;
+    font-size: 9px; color: var(--accent); letter-spacing: 0.1em;
+  }
+
+  .pressure-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+  .pressure-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 24px;
+    position: relative; overflow: hidden;
+  }
+  .pressure-card.front { border-top: 3px solid var(--front); }
+  .pressure-card.rear  { border-top: 3px solid var(--rear); }
+  .pressure-card.front::before { content:''; position:absolute; inset:0; background:var(--front); opacity:0.04; border-radius:10px; }
+  .pressure-card.rear::before  { content:''; position:absolute; inset:0; background:var(--rear);  opacity:0.04; border-radius:10px; }
+
+  .card-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .pressure-card.front .card-label { color: var(--front); }
+  .pressure-card.rear  .card-label { color: var(--rear); }
+
+  .card-wheel-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); opacity: 0.07; font-size: 64px; line-height: 1; }
+
+  .pressure-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 58px; font-weight: 900; line-height: 1; letter-spacing: -0.02em;
+  }
+  .pressure-card.front .pressure-value { color: var(--front); }
+  .pressure-card.rear  .pressure-value { color: var(--rear); }
+
+  .pressure-unit { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 4px; }
+  .pressure-range { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .pressure-range span { color: var(--text); font-weight: 500; }
+
+  .gauge { margin-top: 12px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .gauge-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+  .pressure-card.front .gauge-fill { background: var(--front); }
+  .pressure-card.rear  .gauge-fill { background: var(--rear); }
+
+  .ai-advice {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .ai-advice-header {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ai-advice-body { font-size: 13.5px; line-height: 1.7; color: #c8c8c4; }
+  .ai-advice-body strong { color: var(--text); }
+
+  .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .tip {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 14px; font-size: 12px; color: var(--muted); line-height: 1.5;
+  }
+  .tip strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .error-box {
+    background: rgba(255,92,53,0.08); border: 1px solid rgba(255,92,53,0.3);
+    border-radius: 8px; padding: 16px 18px;
+    font-size: 13px; color: #ff8c72; line-height: 1.6;
+    margin-top: 16px; display: none;
+  }
+  .error-box.visible { display: block; animation: fadeUp 0.3s ease; }
+
+  /* PRESETS */
+  .preset-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: rgba(232,255,58,0.04);
+    border: 1px solid rgba(232,255,58,0.15);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 28px;
+  }
+  .preset-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--accent); white-space: nowrap;
+  }
+  .preset-chips { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+  .preset-chip {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 6px 12px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .preset-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .preset-chip.save-btn {
+    border-color: rgba(232,255,58,0.3); color: var(--accent); margin-left: auto;
+  }
+  .preset-chip.save-btn:hover { background: rgba(232,255,58,0.1); }
+  .preset-chip.delete-btn { color: #ff5c35; border-color: rgba(255,92,53,0.3); padding: 4px 7px; font-size: 12px; }
+  .preset-chip.delete-btn:hover { background: rgba(255,92,53,0.1); }
+
+  .rim-hint {
+    font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.4;
+  }
+  .rim-hint span { color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .form-grid, .form-grid.three { grid-template-columns: 1fr; }
+    .pressure-cards, .tips-grid { grid-template-columns: 1fr; }
+    .pressure-value { font-size: 44px; }
+    .ai-badge { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="8" stroke="#e8ff3a" stroke-width="1.5"/>
+        <circle cx="10" cy="10" r="2" fill="#e8ff3a"/>
+        <line x1="10" y1="2" x2="10" y2="5" stroke="#e8ff3a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="10" y1="15" x2="10" y2="18" stroke="#e8ff3a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="10" x2="5" y2="10" stroke="#e8ff3a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="15" y1="10" x2="18" y2="10" stroke="#e8ff3a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" stroke="#e8ff3a" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="13.7" y1="13.7" x2="15.8" y2="15.8" stroke="#e8ff3a" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Tyre<span>Pressure</span></h1>
+      <p>AI-powered tyre pressure calculator</p>
+    </div>
+    <div class="ai-badge">
+      <div class="ai-dot"></div>
+      Claude AI
+    </div>
+  </header>
+
+  <!-- PRESETS -->
+  <div class="preset-bar">
+    <div class="preset-label">⚡ Presets</div>
+    <div class="preset-chips" id="preset-chips">
+      <span style="font-size:12px;color:var(--muted);font-style:italic;">No presets saved yet</span>
+    </div>
+    <div class="preset-chip save-btn" onclick="savePreset()" title="Save current settings as preset">＋ Save</div>
+  </div>
+
+  <div class="section-label">🚴 Tyre & Rider</div>
+
+  <div class="form-grid three">
+    <div class="field">
+      <label>Tyre width (mm)<span class="req">*</span></label>
+      <select id="width">
+        <option value="">— select —</option>
+        <option value="23">23 mm</option>
+        <option value="25">25 mm</option>
+        <option value="28">28 mm</option>
+        <option value="30">30 mm</option>
+        <option value="32">32 mm</option>
+        <option value="35">35 mm</option>
+        <option value="38">38 mm</option>
+        <option value="40">40 mm</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Brand<span class="req">*</span></label>
+      <select id="brand" onchange="updateModels()">
+        <option value="">— select —</option>
+        <option value="Continental">Continental</option>
+        <option value="Vittoria">Vittoria</option>
+        <option value="Michelin">Michelin</option>
+        <option value="Pirelli">Pirelli</option>
+        <option value="Schwalbe">Schwalbe</option>
+        <option value="Specialized">Specialized</option>
+        <option value="Panaracer">Panaracer</option>
+        <option value="Veloflex">Veloflex</option>
+        <option value="Zipp">Zipp</option>
+        <option value="Maxxis">Maxxis</option>
+        <option value="IRC">IRC</option>
+        <option value="Other">Other brand</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tyre model<span class="req">*</span></label>
+      <select id="model" style="display:none">
+        <option value="">— select brand first —</option>
+      </select>
+      <input type="text" id="model-other" placeholder="Type model name..." style="display:none">
+      <div id="model-hint" class="rim-hint"></div>
+    </div>
+  </div>
+
+  <div class="form-grid" style="margin-top:16px; grid-template-columns: 1fr 1fr 1fr 1fr;">
+    <div class="field">
+      <label>System<span class="req">*</span></label>
+      <select id="type">
+        <option value="">— select —</option>
+        <option value="clincher with inner tube">Clincher with inner tube</option>
+        <option value="tubeless">Tubeless</option>
+        <option value="tubular (sew-up)">Tubular (sew-up)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Internal rim width (mm)</label>
+      <select id="rimwidth">
+        <option value="">— unknown —</option>
+        <option value="13">13 mm (old/narrow)</option>
+        <option value="15">15 mm (traditional)</option>
+        <option value="17">17 mm (modern race)</option>
+        <option value="19">19 mm (wide race)</option>
+        <option value="21">21 mm (endurance/gravel)</option>
+        <option value="23">23 mm (gravel/MTB)</option>
+        <option value="25">25 mm (wide MTB)</option>
+      </select>
+      <div class="rim-hint" id="rim-hint"></div>
+    </div>
+    <div class="field">
+      <label>Rider weight (kg)<span class="req">*</span></label>
+      <input type="number" id="weight" min="40" max="150" placeholder="e.g. 75">
+    </div>
+    <div class="field">
+      <label>Bike weight incl. luggage (kg)<span class="req">*</span></label>
+      <input type="number" id="bikeweight" min="4" max="30" placeholder="e.g. 9">
+    </div>
+  </div>
+
+  <div class="section-label">🌍 Surface</div>
+  <div class="chip-group" id="surface-chips">
+    <div class="chip active" data-val="smooth tarmac" onclick="selectChip(this,'surface')">🏁 Smooth tarmac</div>
+    <div class="chip" data-val="rough or worn tarmac" onclick="selectChip(this,'surface')">🪨 Rough tarmac</div>
+    <div class="chip" data-val="cobblestones" onclick="selectChip(this,'surface')">🧱 Cobblestones</div>
+    <div class="chip" data-val="gravel / unpaved" onclick="selectChip(this,'surface')">⛰️ Gravel</div>
+    <div class="chip" data-val="indoor velodrome" onclick="selectChip(this,'surface')">🏟️ Indoor / Track</div>
+  </div>
+
+  <div class="section-label">🌤 Weather conditions</div>
+  <div class="chip-group" id="weather-chips">
+    <div class="chip active" data-val="dry and warm" onclick="selectChip(this,'weather')">☀️ Dry</div>
+    <div class="chip" data-val="mixed: alternating dry and wet road, dried after rain or morning dew — unpredictable grip" onclick="selectChip(this,'weather')">🌦️ Mixed</div>
+    <div class="chip" data-val="wet and rainy" onclick="selectChip(this,'weather')">🌧️ Wet</div>
+    <div class="chip" data-val="cold (below 5°C)" onclick="selectChip(this,'weather')">🧊 Cold (&lt;5°C)</div>
+    <div class="chip" data-val="hot (above 30°C)" onclick="selectChip(this,'weather')">🔥 Hot (&gt;30°C)</div>
+  </div>
+
+  <div class="section-label">🎯 Riding style & goal</div>
+  <div class="chip-group" id="style-chips">
+    <div class="chip active" data-val="allround recreational" onclick="selectChip(this,'style')">⚖️ Allround</div>
+    <div class="chip" data-val="racing at maximum speed" onclick="selectChip(this,'style')">🏆 Racing</div>
+    <div class="chip" data-val="comfort and long distance" onclick="selectChip(this,'style')">😌 Comfort</div>
+    <div class="chip" data-val="climbing in the mountains" onclick="selectChip(this,'style')">📈 Climbing</div>
+    <div class="chip" data-val="time trial" onclick="selectChip(this,'style')">⏱️ Time trial</div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:28px; flex-wrap:wrap; gap:12px;">
+    <div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Display unit</div>
+    <div class="unit-toggle">
+      <button class="unit-btn active" onclick="setUnit('bar')" id="btn-bar">bar</button>
+      <button class="unit-btn" onclick="setUnit('psi')" id="btn-psi">psi</button>
+    </div>
+  </div>
+
+  <button class="btn-calculate" id="calc-btn" onclick="calculate()">⚡ Analyse with AI</button>
+
+  <div class="error-box" id="error-box"></div>
+
+  <div class="loading-state" id="loading">
+    <div class="loading-wheel"></div>
+    <div class="loading-text">Claude is analysing your situation<span class="loading-dots"></span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px;">Taking into account brand, weight, surface and conditions</div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <span id="results-subtitle">Result</span>
+      <span class="ai-tag">AI analysis</span>
+    </div>
+
+    <div class="pressure-cards">
+      <div class="pressure-card front">
+        <div class="card-label">◀ Front tyre</div>
+        <div class="card-wheel-icon">⊙</div>
+        <div>
+          <span class="pressure-value" id="front-val">—</span>
+          <span class="pressure-unit" id="front-unit">bar</span>
+        </div>
+        <div class="pressure-range">Range: <span id="front-range">—</span></div>
+        <div class="gauge"><div class="gauge-fill" id="front-gauge" style="width:0%"></div></div>
+      </div>
+      <div class="pressure-card rear">
+        <div class="card-label">Rear tyre ▶</div>
+        <div class="card-wheel-icon">⊙</div>
+        <div>
+          <span class="pressure-value" id="rear-val">—</span>
+          <span class="pressure-unit" id="rear-unit">bar</span>
+        </div>
+        <div class="pressure-range">Range: <span id="rear-range">—</span></div>
+        <div class="gauge"><div class="gauge-fill" id="rear-gauge" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="ai-advice">
+      <div class="ai-advice-header">
+        <div class="ai-dot" style="flex-shrink:0"></div>
+        Claude's reasoning
+      </div>
+      <div class="ai-advice-body" id="ai-explanation">—</div>
+    </div>
+
+    <div class="tips-grid" id="tips-grid"></div>
+  </div>
+
+</div>
+
+<script>
+  let currentUnit = 'bar';
+  let lastBarValues = null;
+
+  // ── TYRE MODEL DATABASE ───────────────────────────────────────────
+  const tyreModels = {
+    'Continental': [
+      { name: 'GP5000 (clincher)', note: 'Flagship race tyre — low rolling resistance, excellent grip' },
+      { name: 'GP5000 S TR (tubeless)', note: 'Tubeless version of GP5000 — slightly lower pressure recommended' },
+      { name: 'GP5000 TT (tubular)', note: 'Time trial tubular — very high pressure, minimal weight' },
+      { name: 'GP5000 AS TR (all-season tubeless)', note: 'All-weather variant — broader pressure range' },
+      { name: 'Grand Prix Classic', note: 'Supple cotton casing — responsive at lower pressures' },
+      { name: 'Grand Prix 4-Season', note: 'Robust all-weather tyre — slightly higher pressure advised' },
+      { name: 'Attack / Force (front/rear)', note: 'Asymmetric race pair — different profiles front and rear' },
+      { name: 'Ultra Sport III', note: 'Training tyre — higher pressures, harder compound' },
+      { name: 'Contact Speed', note: 'Urban/touring — robust, higher minimum pressure' },
+    ],
+    'Vittoria': [
+      { name: 'Corsa Pro (tubeless)', note: 'Top-tier graphene tubeless — supple, lower pressure possible' },
+      { name: 'Corsa Pro Control (tubeless)', note: 'Wet-weather version — extra grip compound' },
+      { name: 'Corsa Speed (clincher/TLR)', note: 'Pure race speed — highest pressure range' },
+      { name: 'Corsa (clincher)', note: 'Classic race clincher — cotton casing, runs supple' },
+      { name: 'Corsa Next (tubeless)', note: 'Latest generation — optimised for lower pressures' },
+      { name: 'Rubino Pro', note: 'Training/race — durable compound, mid-range pressure' },
+      { name: 'Zaffiro Pro', note: 'Entry road tyre — harder compound, higher pressure' },
+      { name: 'Terreno Dry (gravel)', note: 'Gravel/mixed — lower pressures for off-road grip' },
+      { name: 'Terreno Wet (gravel)', note: 'Wet gravel — knobby, notably lower pressure' },
+    ],
+    'Michelin': [
+      { name: 'Power Cup (tubeless)', note: 'Race tubeless — excellent cornering, low pressure works well' },
+      { name: 'Power Cup Competition (clincher)', note: 'Race clincher — high-performance compound' },
+      { name: 'Power Road (tubeless)', note: 'Endurance/all-round — comfortable at moderate pressures' },
+      { name: 'Power Road TLR', note: 'Tubeless endurance — slightly lower than clincher equivalent' },
+      { name: 'Power Time Trial', note: 'TT/triathlon — max pressure for aerodynamics' },
+      { name: 'Pro4 Endurance', note: 'Long-lasting training tyre — harder, higher pressure' },
+      { name: 'Lithion 3', note: 'Budget training — robust, higher pressure' },
+      { name: 'Power Gravel (mixed)', note: 'Gravel / light off-road — lower pressure range' },
+    ],
+    'Pirelli': [
+      { name: 'P ZERO Race (clincher)', note: 'Flagship race clincher — used by pro teams, specific pressure chart' },
+      { name: 'P ZERO Race TLR (tubeless)', note: 'Tubeless race — Pirelli recommends lower than clincher' },
+      { name: 'P ZERO Race SL', note: 'Ultralight version — very supple casing, responds to pressure changes' },
+      { name: 'P ZERO Race TT', note: 'Time trial — high pressure, aero profile' },
+      { name: 'P ZERO Velo (clincher)', note: 'Endurance race — slightly more robust than Race series' },
+      { name: 'Cinturato Road (tubeless)', note: 'All-weather tubeless — puncture belt, broader range' },
+      { name: 'Cinturato Velo (clincher)', note: 'All-weather clincher — durable, higher pressure' },
+      { name: 'Scorpion XC RC (gravel/MTB)', note: 'Gravel race — significantly lower pressure' },
+    ],
+    'Schwalbe': [
+      { name: 'Pro One (tubeless)', note: 'Top race tubeless — exceptionally supple, low pressure ideal' },
+      { name: 'Pro One (clincher)', note: 'Race clincher — slightly higher pressure than tubeless version' },
+      { name: 'One (clincher)', note: 'Mid-range race — good rolling resistance, standard pressures' },
+      { name: 'Ultremo ZX', note: 'Older flagship — higher pressure range' },
+      { name: 'Durano Plus', note: 'Training/commute — very robust, higher pressure' },
+      { name: 'Lugano II', note: 'Entry training — hard compound, high pressure' },
+      { name: 'G-One Speed (gravel TLR)', note: 'Fast gravel tubeless — moderate lower pressure' },
+      { name: 'G-One Allround (gravel)', note: 'All-round gravel — wide pressure range, lower for off-road' },
+      { name: 'G-One Bite (gravel)', note: 'Rough gravel/mud — lower pressure for maximum grip' },
+    ],
+    'Specialized': [
+      { name: 'S-Works Turbo Cotton (clincher)', note: 'Premium race clincher — cotton casing, very supple' },
+      { name: 'S-Works Turbo RapidAir (tubeless)', note: 'Top tubeless — Specialized recommends specific pressures by weight' },
+      { name: 'Turbo Cotton (clincher)', note: 'Race clincher — slightly heavier than S-Works' },
+      { name: 'Turbo RapidAir (tubeless)', note: 'Endurance tubeless — robust, good all-round' },
+      { name: 'Turbo Pro (clincher)', note: 'Race training — durable, mid-range pressure' },
+      { name: 'Roubaix Pro (tubeless)', note: 'Cobble/rough road — specifically designed for lower pressure' },
+      { name: 'Pathfinder Pro (gravel)', note: 'Gravel — lower pressures, wide range' },
+    ],
+    'Panaracer': [
+      { name: 'Race A Evo 4 (clincher)', note: 'Race clincher — lightweight, moderate pressure range' },
+      { name: 'Race D Evo 4 (clincher)', note: 'Wet conditions — extra grip compound' },
+      { name: 'Race L Evo 4 (clincher)', note: 'Ultralight — very supple casing' },
+      { name: 'Agilest (clincher)', note: 'Modern race — good balance of speed and comfort' },
+      { name: 'Agilest Duro (clincher)', note: 'Durable race — harder compound' },
+      { name: 'Agilest TLR (tubeless)', note: 'Tubeless version — lower pressures recommended' },
+      { name: 'GravelKing SS (gravel)', note: 'Semi-slick gravel — versatile pressure range' },
+      { name: 'GravelKing SK (gravel)', note: 'Knobby gravel — lower pressure for off-road' },
+    ],
+    'Veloflex': [
+      { name: 'Corsa Race (tubular)', note: 'Classic cotton tubular — very supple, responds well to pressure' },
+      { name: 'Criterium (tubular)', note: 'Criterium/circuit — slightly stiffer, higher pressure' },
+      { name: 'Carbon (tubular)', note: 'Carbon rim specific — tread compound for carbon braking' },
+      { name: 'Roubaix (tubular)', note: 'Classics/cobbles — lower pressure, extra puncture resistance' },
+      { name: 'Master (clincher)', note: 'High-end clincher — cotton casing feel' },
+      { name: 'Record (tubeless)', note: 'Tubeless — lower pressures, supple ride' },
+    ],
+    'Zipp': [
+      { name: 'Tangente Course (clincher)', note: 'Race clincher — optimised for Zipp wheels' },
+      { name: 'Tangente Speed (clincher)', note: 'Speed-focused — slightly stiffer' },
+      { name: 'Tangente Course R (tubeless)', note: 'Tubeless — lower pressures work well with deep rims' },
+    ],
+    'Maxxis': [
+      { name: 'Padrone Race (clincher)', note: 'Road race clincher — good puncture protection' },
+      { name: 'Padrone Race TLR (tubeless)', note: 'Road tubeless — reliable, good all-round' },
+      { name: 'Refuse (gravel)', note: 'Gravel — wide pressure range' },
+      { name: 'Rambler (gravel)', note: 'Rough gravel/adventure — lower pressures' },
+    ],
+    'IRC': [
+      { name: 'Formula Pro RBCC (clincher)', note: 'Race clincher — rubber compound for all conditions' },
+      { name: 'Formula Pro Tubeless RBCC', note: 'Top tubeless — popular in Japan, supple' },
+      { name: 'Formula Pro Light RBCC', note: 'Lightweight race — very supple casing' },
+      { name: 'Boken Plus (gravel)', note: 'Gravel — moderate lower pressure range' },
+    ],
+    'Other': [
+      { name: 'Other model', note: 'Enter details — Claude will use general guidelines for this brand' },
+    ],
+  };
+
+  function updateModels() {
+    const brand = document.getElementById('brand').value;
+    const modelSelect = document.getElementById('model');
+    const modelOther = document.getElementById('model-other');
+    const hintEl = document.getElementById('model-hint');
+
+    if (!brand) {
+      modelSelect.style.display = 'none';
+      modelOther.style.display = 'none';
+      hintEl.innerHTML = '';
+      return;
+    }
+
+    if (brand === 'Other') {
+      modelSelect.style.display = 'none';
+      modelOther.style.display = 'block';
+      modelOther.value = '';
+      hintEl.innerHTML = '';
+      return;
+    }
+
+    const models = tyreModels[brand] || [];
+    modelSelect.innerHTML = '<option value="">— select model —</option>' +
+      models.map(m => '<option value="' + m.name + '" data-note="' + m.note + '">' + m.name + '</option>').join('');
+    modelSelect.style.display = 'block';
+    modelOther.style.display = 'none';
+    hintEl.innerHTML = '';
+
+    modelSelect.onchange = function() {
+      const selected = this.options[this.selectedIndex];
+      const note = selected?.dataset?.note || '';
+      hintEl.innerHTML = note ? '<span>ℹ</span> ' + note : '';
+    };
+  }
+
+  function getModelValue() {
+    const brand = document.getElementById('brand').value;
+    if (brand === 'Other') return document.getElementById('model-other').value.trim();
+    return document.getElementById('model').value;
+  }
+
+  // ── RIM WIDTH HINT ────────────────────────────────────────────────
+  const rimHints = {
+    '13': 'Old narrow rim — tyre mounts narrower than stated width.',
+    '15': 'Traditional — slight narrowing of the tyre.',
+    '17': 'Modern race — tyre performs at nominal width.',
+    '19': 'Wide race — tyre may run 1–2 mm wider than stated.',
+    '21': 'Endurance/gravel — tyre mounts slightly wider, lower pressure advised.',
+    '23': 'Wide gravel/MTB — significantly wider than nominal.',
+    '25': 'Wide MTB — tyre is substantially wider than stated width.',
+  };
+  document.getElementById('rimwidth').addEventListener('change', function() {
+    const hint = rimHints[this.value] || '';
+    const hintEl = document.getElementById('rim-hint');
+    hintEl.innerHTML = hint ? '<span>ℹ</span> ' + hint : '';
+  });
+
+  // ── UNIT TOGGLE ───────────────────────────────────────────────────
+  function setUnit(u) {
+    currentUnit = u;
+    document.getElementById('btn-bar').classList.toggle('active', u === 'bar');
+    document.getElementById('btn-psi').classList.toggle('active', u === 'psi');
+    if (lastBarValues) renderPressures(lastBarValues);
+  }
+
+  // ── CHIP SELECTION ────────────────────────────────────────────────
+  function selectChip(el, group) {
+    document.querySelectorAll('#' + group + '-chips .chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function getChipVal(group) {
+    return document.querySelector('#' + group + '-chips .chip.active')?.dataset.val || '';
+  }
+
+  // ── PRESETS ───────────────────────────────────────────────────────
+  function getFormState() {
+    return {
+      width:      document.getElementById('width').value,
+      brand:      document.getElementById('brand').value,
+      model:      getModelValue(),
+      type:       document.getElementById('type').value,
+      rimwidth:   document.getElementById('rimwidth').value,
+      weight:     document.getElementById('weight').value,
+      bikeweight: document.getElementById('bikeweight').value,
+      surface:    getChipVal('surface'),
+      weather:    getChipVal('weather'),
+      style:      getChipVal('style'),
+    };
+  }
+
+  function applyFormState(s) {
+    document.getElementById('width').value      = s.width      || '';
+    document.getElementById('brand').value      = s.brand      || '';
+    document.getElementById('rimwidth').value   = s.rimwidth   || '';
+    document.getElementById('weight').value     = s.weight     || '';
+    document.getElementById('bikeweight').value = s.bikeweight || '';
+    // rebuild model dropdown for saved brand, then set value
+    updateModels();
+    if (s.brand === 'Other') {
+      document.getElementById('model-other').value = s.model || '';
+    } else {
+      document.getElementById('model').value = s.model || '';
+      document.getElementById('model').dispatchEvent(new Event('change'));
+    }
+    document.getElementById('type').value = s.type || '';
+    document.getElementById('rimwidth').dispatchEvent(new Event('change'));
+    ['surface','weather','style'].forEach(function(group) {
+      if (!s[group]) return;
+      const chip = document.querySelector('#' + group + '-chips .chip[data-val="' + s[group] + '"]');
+      if (chip) { document.querySelectorAll('#' + group + '-chips .chip').forEach(c => c.classList.remove('active')); chip.classList.add('active'); }
+    });
+  }
+
+  function loadPresets() {
+    try { return JSON.parse(localStorage.getItem('tyrepressure_presets') || '[]'); } catch(e) { return []; }
+  }
+
+  function savePresetsToStorage(presets) {
+    localStorage.setItem('tyrepressure_presets', JSON.stringify(presets));
+  }
+
+  function renderPresetChips() {
+    const presets = loadPresets();
+    const container = document.getElementById('preset-chips');
+    if (!presets.length) {
+      container.innerHTML = '<span style="font-size:12px;color:var(--muted);font-style:italic;">No presets saved yet</span>';
+      return;
+    }
+    container.innerHTML = presets.map(function(p, i) {
+      return '<div style="display:flex;align-items:center;gap:0">' +
+        '<div class="preset-chip" onclick="applyPreset(' + i + ')" title="' + (p.name) + '">' + p.name + '</div>' +
+        '<div class="preset-chip delete-btn" onclick="deletePreset(' + i + ')" title="Delete preset">✕</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function savePreset() {
+    const state = getFormState();
+    const brand = state.brand || '?';
+    const width = state.width ? state.width + 'mm' : '';
+    const weight = state.weight ? state.weight + 'kg' : '';
+    const defaultName = [brand, width, weight].filter(Boolean).join(' · ');
+    const name = prompt('Name for this preset:', defaultName);
+    if (!name) return;
+    const presets = loadPresets();
+    presets.push({ name: name.trim(), state: state });
+    savePresetsToStorage(presets);
+    renderPresetChips();
+  }
+
+  function applyPreset(i) {
+    const presets = loadPresets();
+    if (presets[i]) applyFormState(presets[i].state);
+  }
+
+  function deletePreset(i) {
+    const presets = loadPresets();
+    presets.splice(i, 1);
+    savePresetsToStorage(presets);
+    renderPresetChips();
+  }
+
+  // Init presets on load
+  renderPresetChips();
+
+  // ── PRESSURES ─────────────────────────────────────────────────────
+  function toDisplay(bar) {
+    return currentUnit === 'psi' ? (bar * 14.5038).toFixed(0) : bar.toFixed(2);
+  }
+
+  function renderPressures(vals) {
+    const u = currentUnit;
+    document.getElementById('front-val').textContent   = toDisplay(vals.front);
+    document.getElementById('rear-val').textContent    = toDisplay(vals.rear);
+    document.getElementById('front-unit').textContent  = u;
+    document.getElementById('rear-unit').textContent   = u;
+    document.getElementById('front-range').textContent = toDisplay(vals.frontMin) + ' \u2013 ' + toDisplay(vals.frontMax) + ' ' + u;
+    document.getElementById('rear-range').textContent  = toDisplay(vals.rearMin)  + ' \u2013 ' + toDisplay(vals.rearMax)  + ' ' + u;
+    const span = (vals.maxP - vals.minP) || 6;
+    document.getElementById('front-gauge').style.width = Math.min(100, Math.max(8, (vals.front - vals.minP) / span * 100)) + '%';
+    document.getElementById('rear-gauge').style.width  = Math.min(100, Math.max(8, (vals.rear  - vals.minP) / span * 100)) + '%';
+  }
+
+  // ── CALCULATE ─────────────────────────────────────────────────────
+  async function calculate() {
+    const width      = document.getElementById('width').value;
+    const brand      = document.getElementById('brand').value;
+    const model      = getModelValue();
+    const type       = document.getElementById('type').value;
+    const rimwidth   = document.getElementById('rimwidth').value;
+    const weight     = parseFloat(document.getElementById('weight').value);
+    const bikeWeight = parseFloat(document.getElementById('bikeweight').value);
+    const surface    = getChipVal('surface');
+    const weather    = getChipVal('weather');
+    const style      = getChipVal('style');
+
+    if (!width || !brand || !model || !type || !weight || !bikeWeight) {
+      showError('Please fill in all required fields: tyre width, brand, model, system, rider weight and bike weight.');
+      return;
+    }
+    hideError();
+
+    const totalWeight = weight + bikeWeight;
+    const brandModel  = model ? brand + ' ' + model : brand;
+    const frontLoad   = Math.round(totalWeight * 0.4);
+    const rearLoad    = Math.round(totalWeight * 0.6);
+    const rimLine     = rimwidth ? '- Internal rim width: ' + rimwidth + ' mm (affects effective tyre width and optimal pressure)' : '- Internal rim width: unknown';
+
+    const prompt = `You are an expert cyclist and tyre specialist. Provide accurate advice on the ideal tyre pressure based on the following data:
+
+TYRE:
+- Brand and model: ${brandModel}
+- Stated tyre width: ${width} mm
+- System: ${type}
+${rimLine}
+
+RIDER & BIKE:
+- Rider weight: ${weight} kg
+- Bike weight including luggage: ${bikeWeight} kg
+- Total weight: ${totalWeight} kg
+- Front tyre load: ~${frontLoad} kg (40%)
+- Rear tyre load: ~${rearLoad} kg (60%)
+
+CONDITIONS:
+- Surface: ${surface}
+- Weather: ${weather}
+- Riding style / goal: ${style}
+
+Take into account that internal rim width affects effective tyre width (wider rim = wider tyre = lower optimal pressure). The ETRTO guideline states that the optimal rim width is 0.5–0.85x the tyre width.
+
+Respond ONLY with valid JSON, no markdown backticks or any text outside the JSON:
+{
+  "front_bar": 6.5,
+  "rear_bar": 7.0,
+  "front_min_bar": 6.2,
+  "front_max_bar": 6.8,
+  "rear_min_bar": 6.7,
+  "rear_max_bar": 7.3,
+  "explanation": "2-3 sentences in English explaining the reasoning behind these values, including the influence of rim width and brand-specific properties of ${brandModel} if known.",
+  "tips": [
+    {"title": "Tip title", "body": "Tip content"},
+    {"title": "Tip title", "body": "Tip content"},
+    {"title": "Tip title", "body": "Tip content"},
+    {"title": "Tip title", "body": "Tip content"}
+  ]
+}`;
+
+    document.getElementById('calc-btn').disabled = true;
+    document.getElementById('loading').classList.add('visible');
+    document.getElementById('results').classList.remove('visible');
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'API error: ' + response.status);
+      }
+
+      const data = await response.json();
+      const rawText = data.content.map(b => b.text || '').join('');
+
+      let parsed;
+      try {
+        const clean = rawText.replace(/```json|```/g, '').trim();
+        parsed = JSON.parse(clean);
+      } catch(e) {
+        const match = rawText.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('Could not process the response. Please try again.');
+        parsed = JSON.parse(match[0]);
+      }
+
+      lastBarValues = {
+        front:    parsed.front_bar,
+        rear:     parsed.rear_bar,
+        frontMin: parsed.front_min_bar,
+        frontMax: parsed.front_max_bar,
+        rearMin:  parsed.rear_min_bar,
+        rearMax:  parsed.rear_max_bar,
+        minP: Math.min(parsed.front_min_bar, parsed.rear_min_bar) - 0.3,
+        maxP: Math.max(parsed.front_max_bar, parsed.rear_max_bar) + 0.3,
+      };
+
+      renderPressures(lastBarValues);
+      document.getElementById('ai-explanation').innerHTML = parsed.explanation || '—';
+
+      if (parsed.tips && parsed.tips.length) {
+        document.getElementById('tips-grid').innerHTML = parsed.tips.map(function(t) {
+          return '<div class="tip"><strong>' + t.title + '</strong>' + t.body + '</div>';
+        }).join('');
+      }
+
+      const typeEl = document.getElementById('type');
+      const rimLabel = rimwidth ? ' · rim ' + rimwidth + 'mm' : '';
+      const surfaceLabel = document.querySelector('#surface-chips .chip.active')?.textContent.trim() || surface;
+      const weatherLabel = document.querySelector('#weather-chips .chip.active')?.textContent.trim() || weather;
+      document.getElementById('results-subtitle').textContent =
+        brandModel + ' \u00b7 ' + (typeEl.options[typeEl.selectedIndex]?.text || type) + ' ' + width + 'mm' + rimLabel + ' \u00b7 ' + surfaceLabel + ' \u00b7 ' + weatherLabel;
+
+      document.getElementById('loading').classList.remove('visible');
+      document.getElementById('results').classList.add('visible');
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch(err) {
+      document.getElementById('loading').classList.remove('visible');
+      showError('Something went wrong: ' + err.message);
+    } finally {
+      document.getElementById('calc-btn').disabled = false;
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-box');
+    el.textContent = '\u26a0\ufe0f ' + msg;
+    el.classList.add('visible');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function hideError() {
+    document.getElementById('error-box').classList.remove('visible');
+  }
+</script>
+</body>
+</html>
