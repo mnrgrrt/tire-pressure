@@ -934,6 +934,12 @@ Respond ONLY with valid JSON, no markdown backticks or any text outside the JSON
       }
 
       const data = await response.json();
+      console.log('API response:', JSON.stringify(data));
+
+      if (!response.ok || data.type === 'error') {
+        throw new Error(data.error?.message || 'API error: ' + response.status);
+      }
+
       const rawText = data.content.map(b => b.text || '').join('');
 
       let parsed;
