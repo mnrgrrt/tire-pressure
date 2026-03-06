@@ -539,8 +539,16 @@
       <div class="ai-advice-header">
         <div class="ai-dot" style="flex-shrink:0"></div>
         Claude's reasoning
+        <span id="confidence-badge" style="margin-left:auto;font-size:9px;padding:2px 8px;border-radius:3px;font-weight:700;letter-spacing:0.1em;display:none"></span>
       </div>
       <div class="ai-advice-body" id="ai-explanation">—</div>
+    </div>
+
+    <div class="ai-advice" id="sources-panel" style="display:none; border-left-color: var(--muted); margin-top: 0; border-top: none; border-radius: 0 0 8px 0;">
+      <div class="ai-advice-header" style="color:var(--muted);">
+        📚 Source & confidence
+      </div>
+      <div class="ai-advice-body" id="ai-sources" style="color:var(--muted); font-size:12.5px;">—</div>
     </div>
 
     <div class="tips-grid" id="tips-grid"></div>
@@ -874,7 +882,7 @@
     const rearLoad    = Math.round(totalWeight * 0.6);
     const rimLine     = rimwidth ? '- Internal rim width: ' + rimwidth + ' mm (affects effective tyre width and optimal pressure)' : '- Internal rim width: unknown';
 
-    const prompt = `You are an expert cyclist and tyre specialist. Provide accurate advice on the ideal tyre pressure based on the following data:
+    const prompt = `You are an expert cyclist and tyre specialist with deep knowledge of tyre pressure research, manufacturer data, and scientific studies. Provide accurate advice on the ideal tyre pressure based on the following data:
 
 TYRE:
 - Brand and model: ${brandModel}
@@ -896,6 +904,12 @@ CONDITIONS:
 
 Take into account that internal rim width affects effective tyre width (wider rim = wider tyre = lower optimal pressure). The ETRTO guideline states that the optimal rim width is 0.5–0.85x the tyre width.
 
+IMPORTANT: Be transparent about the source and confidence of your advice. For each recommendation, indicate:
+1. Whether you have specific manufacturer data for this exact tyre model
+2. Which methodology or research your advice is based on (e.g. Silca/Josh Poertner research, ETRTO guidelines, manufacturer pressure charts, Wheel Energy data, general empirical rules)
+3. Your confidence level: HIGH (specific model data known), MEDIUM (brand/type known, interpolated), LOW (general guidelines applied)
+4. If your advice differs significantly from the Silca calculator methodology, explain why
+
 Respond ONLY with valid JSON, no markdown backticks or any text outside the JSON:
 {
   "front_bar": 6.5,
@@ -904,7 +918,9 @@ Respond ONLY with valid JSON, no markdown backticks or any text outside the JSON
   "front_max_bar": 6.8,
   "rear_min_bar": 6.7,
   "rear_max_bar": 7.3,
-  "explanation": "2-3 sentences in English explaining the reasoning behind these values, including the influence of rim width and brand-specific properties of ${brandModel} if known.",
+  "confidence": "HIGH / MEDIUM / LOW",
+  "explanation": "2-3 sentences explaining the reasoning, rim width influence, and brand-specific properties of ${brandModel} if known.",
+  "sources": "1-2 sentences explaining exactly what data sources and methodology this advice is based on — be specific (e.g. 'Based on Continental's published pressure chart for GP5000, cross-referenced with Silca's load-based model'). If only general guidelines are used, state this clearly.",
   "tips": [
     {"title": "Tip title", "body": "Tip content"},
     {"title": "Tip title", "body": "Tip content"},
@@ -965,6 +981,23 @@ Respond ONLY with valid JSON, no markdown backticks or any text outside the JSON
 
       renderPressures(lastBarValues);
       document.getElementById('ai-explanation').innerHTML = parsed.explanation || '—';
+
+      // confidence badge
+      const badge = document.getElementById('confidence-badge');
+      const conf = (parsed.confidence || '').toUpperCase();
+      if (conf) {
+        badge.style.display = 'inline-block';
+        badge.textContent = conf;
+        if (conf.includes('HIGH'))   { badge.style.background = 'rgba(80,220,100,0.15)'; badge.style.color = '#50dc64'; }
+        if (conf.includes('MEDIUM')) { badge.style.background = 'rgba(232,255,58,0.15)'; badge.style.color = 'var(--accent)'; }
+        if (conf.includes('LOW'))    { badge.style.background = 'rgba(255,92,53,0.15)';  badge.style.color = '#ff8c72'; }
+      }
+
+      // sources panel
+      if (parsed.sources) {
+        document.getElementById('ai-sources').innerHTML = parsed.sources;
+        document.getElementById('sources-panel').style.display = 'block';
+      }
 
       if (parsed.tips && parsed.tips.length) {
         document.getElementById('tips-grid').innerHTML = parsed.tips.map(function(t) {
